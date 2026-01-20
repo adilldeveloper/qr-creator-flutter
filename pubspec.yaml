@@ -1,0 +1,47 @@
+name: scan_me
+description: "A new Flutter project."
+publish_to: 'none'  # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_mobile_ads: ^5.0.0
+  shared_preferences: ^2.2.2
+  qr_flutter: ^4.1.0
+  cupertino_icons: ^1.0.8
+  flutter_native_splash: ^2.4.0
+  path_provider: ^2.1.2
+  share_plus: ^7.2.1
+  app_tracking_transparency: ^2.0.4
+  connectivity_plus: ^6.0.5
+  flutter_launcher_icons: ^0.13.1
+
+
+
+flutter_native_splash:
+  color: "#F5F7FB"
+  image: assets/icon.png
+  android: true
+  ios: true
+  fullscreen: true
+
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon.png
+  remove_alpha_ios: true
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
