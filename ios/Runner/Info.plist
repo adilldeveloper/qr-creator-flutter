@@ -50,7 +50,7 @@
 
 
 <key>NSUserTrackingUsageDescription</key>
-<string>Your permission allows ads to support the app without tracking you personally.</string>
+<string>This helps us deliver relevant ads and improve the app experience.</string>
 
 
 <key>NSPhotoLibraryAddUsageDescription</key>

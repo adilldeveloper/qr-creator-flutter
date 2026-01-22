@@ -1,18 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
+import 'dart:io';
+
 import 'screens/about_screen.dart';
-
-import 'services/usage_service.dart';
-import 'widgets/reward_dialog.dart';
-
 import 'screens/generate_qr_screen.dart';
 import 'screens/qr_templates_screen.dart';
 import 'screens/qr_history_screen.dart';
 
+import 'services/usage_service.dart';
+import 'widgets/reward_dialog.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ STEP 1: Request ATT FIRST (iOS only)
+  if (Platform.isIOS) {
+    final status =
+    await AppTrackingTransparency.trackingAuthorizationStatus;
+
+    if (status == TrackingStatus.notDetermined) {
+      await AppTrackingTransparency.requestTrackingAuthorization();
+    }
+  }
+
+  // ✅ STEP 2: Initialize AdMob AFTER ATT
   await MobileAds.instance.initialize();
+
   runApp(const MyApp());
 }
 
@@ -48,32 +62,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
 
-  /// ----------------------------------------------------
-  /// STEP A: ATT REQUEST (ONLY BEFORE ADS)
-  /// ----------------------------------------------------
-
-
-  Future<void> _requestATTIfNeeded() async {
-    if (!mounted) return;
-
-    if (Theme.of(context).platform != TargetPlatform.iOS) return;
-
-    final status =
-    await AppTrackingTransparency.trackingAuthorizationStatus;
-
-    if (status == TrackingStatus.notDetermined) {
-      await AppTrackingTransparency.requestTrackingAuthorization();
-    }
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-
-      body: SafeArea( // STEP C + D: iOS SafeArea
-        child: SingleChildScrollView( // STEP C: prevent overflow
+      body: SafeArea(
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -81,9 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const SizedBox(height: 16),
 
-                /// ------------------------------------------------
-                /// HERO HEADER
-                /// ------------------------------------------------
+                /// HERO
                 Row(
                   children: [
                     Container(
@@ -131,9 +123,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                /// ------------------------------------------------
-                /// QUICK QR (LIMITED)
-                /// ------------------------------------------------
                 _modernActionCard(
                   icon: Icons.flash_on,
                   title: 'Quick QR',
@@ -146,9 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 16),
 
-                /// ------------------------------------------------
-                /// QR TEMPLATES (LIMITED)
-                /// ------------------------------------------------
                 _modernActionCard(
                   icon: Icons.dashboard_customize,
                   title: 'QR Templates',
@@ -161,9 +147,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 16),
 
-                /// ------------------------------------------------
-                /// STEP B: MY QR CODES (HISTORY – NO LIMIT)
-                /// ------------------------------------------------
                 _myQrLibraryCard(
                   onTap: () {
                     Navigator.push(
@@ -187,14 +170,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
 
                 _aboutCard(
-
                   onTap: () {
-
                     Navigator.push(
-
                       context,
                       MaterialPageRoute(
                         builder: (_) => const AboutScreen(),
@@ -202,7 +183,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
-
               ],
             ),
           ),
@@ -212,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// ----------------------------------------------------
-  /// ACCESS CONTROL (LIMIT + REWARD)
+  /// ACCESS CONTROL
   /// ----------------------------------------------------
   Future<void> _handleLimitedAccess(
       BuildContext context,
@@ -227,9 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(builder: (_) => screen),
       );
     } else {
-      // STEP A: Request ATT ONLY before ads
-      await _requestATTIfNeeded();
-
       final unlocked = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
@@ -247,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// ----------------------------------------------------
-  /// PRIMARY ACTION CARD
+  /// UI HELPERS
   /// ----------------------------------------------------
   Widget _modernActionCard({
     required IconData icon,
@@ -263,8 +240,6 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
             colors: [
               Colors.indigo.shade400,
               Colors.indigo.shade700,
@@ -322,9 +297,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// ----------------------------------------------------
-  /// STEP B: HISTORY / LIBRARY CARD (SECONDARY UI)
-  /// ----------------------------------------------------
   Widget _myQrLibraryCard({required VoidCallback onTap}) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
@@ -335,58 +307,24 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
         child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.history,
-                color: Colors.indigo,
-                size: 26,
+          children: const [
+            Icon(Icons.history, color: Colors.indigo),
+            SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'My QR Codes',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'My QR Codes',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'View previously generated QR codes',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16),
+            Icon(Icons.arrow_forward_ios, size: 16),
           ],
         ),
       ),
     );
   }
 
-  /// ----------------------------------------------------
-  /// ABOUT CARD
-  /// ----------------------------------------------------
   Widget _aboutCard({required VoidCallback onTap}) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
@@ -397,53 +335,21 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
         child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.info_outline,
-                color: Colors.indigo,
-                size: 26,
+          children: const [
+            Icon(Icons.info_outline, color: Colors.indigo),
+            SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'About QR Creator',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'About QR Creator',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'App details, features & privacy',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 16),
+            Icon(Icons.arrow_forward_ios, size: 16),
           ],
         ),
       ),
     );
   }
-
 }
