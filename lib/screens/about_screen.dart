@@ -49,8 +49,7 @@ class AboutScreen extends StatelessWidget {
               const SizedBox(height: 8),
 
               const Text(
-                'You can use the app for free with a daily limit. '
-                    'Watching a short rewarded ad allows you to unlock additional uses. '
+                'You can use the app for free . '
                     'Ads help support continued development of the app.',
               ),
 

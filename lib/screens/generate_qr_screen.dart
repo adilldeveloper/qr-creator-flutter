@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-import '../widgets/export_reward_dialog.dart';
+import '../services/reward_ad_service.dart';
+import '../services/att_service.dart';
 import '../services/qr_history_service.dart';
 
 class GenerateQrScreen extends StatefulWidget {
@@ -19,6 +21,8 @@ class GenerateQrScreen extends StatefulWidget {
 }
 
 class _GenerateQrScreenState extends State<GenerateQrScreen> {
+  final RewardAdService _adService = RewardAdService();
+
   final TextEditingController _controller = TextEditingController();
   final GlobalKey _qrKey = GlobalKey();
 
@@ -27,10 +31,24 @@ class _GenerateQrScreenState extends State<GenerateQrScreen> {
   @override
   void initState() {
     super.initState();
+
     if (widget.initialData != null) {
       _controller.text = widget.initialData!;
       _qrData = widget.initialData!;
     }
+
+    _prepareAds(); // ✅ ATT + AdMob + preload
+  }
+
+  Future<void> _prepareAds() async {
+    // 🔐 STEP 1: Request ATT permission (iOS only)
+    await AttService.requestIfNeeded();
+
+    // 📢 STEP 2: Initialize AdMob AFTER ATT
+    await MobileAds.instance.initialize();
+
+    // 🎯 STEP 3: Preload rewarded ad silently
+    _adService.preload();
   }
 
   @override
@@ -39,38 +57,35 @@ class _GenerateQrScreenState extends State<GenerateQrScreen> {
     super.dispose();
   }
 
-  /// SHARE QR IMAGE (NO SAVE, NO PERMISSION)
+  /// SHARE QR (AD IF AVAILABLE, OTHERWISE DIRECT SHARE)
   Future<void> _shareQr() async {
-    final unlocked = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const ExportRewardDialog(),
+    if (_qrData.isEmpty) return;
+
+    _adService.showIfAvailable(
+      onComplete: () async {
+        final boundary =
+        _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+        final image = await boundary.toImage(pixelRatio: 3);
+        final byteData =
+        await image.toByteData(format: ui.ImageByteFormat.png);
+
+        final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+        final XFile file = XFile.fromData(
+          pngBytes,
+          mimeType: 'image/png',
+          name: 'qr.png',
+        );
+
+        await QrHistoryService.add(_qrData);
+
+        await Share.shareXFiles(
+          [file],
+          text: 'Generated using QR Pro',
+        );
+      },
     );
-
-    if (unlocked == true && _qrData.isNotEmpty) {
-      final boundary =
-      _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-
-      final image = await boundary.toImage(pixelRatio: 3);
-      final byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
-
-      final Uint8List pngBytes = byteData!.buffer.asUint8List();
-
-      final XFile file = XFile.fromData(
-        pngBytes,
-        mimeType: 'image/png',
-        name: 'qr.png',
-      );
-
-      // Save to history only once
-      await QrHistoryService.add(_qrData);
-
-      await Share.shareXFiles(
-        [file],
-        text: 'Generated using QR Pro',
-      );
-    }
   }
 
   @override
@@ -131,7 +146,7 @@ class _GenerateQrScreenState extends State<GenerateQrScreen> {
               const SizedBox(height: 24),
 
               Text(
-                'Share QR using a short ad',
+                'An ad may be shown before sharing',
                 style: TextStyle(color: Colors.grey.shade600),
               ),
             ],

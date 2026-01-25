@@ -12,16 +12,14 @@ class RewardAdService {
 
   String get _adUnitId {
     if (Platform.isIOS) {
-      return 'ca-app-pub-4767222875229256/6162173887'; // iOS
+      return 'ca-app-pub-4767222875229256/6162173887'; // iOS test
     } else {
       return 'ca-app-pub-3940256099942544/5224354917'; // Android test
     }
   }
 
-  void load({
-    required VoidCallback onLoaded,
-    required VoidCallback onFailed,
-  }) {
+  /// Preload ad silently (call this early)
+  void preload() {
     if (_isLoading || _rewardedAd != null) return;
 
     _isLoading = true;
@@ -33,41 +31,45 @@ class RewardAdService {
         onAdLoaded: (ad) {
           _rewardedAd = ad;
           _isLoading = false;
-          onLoaded();
         },
         onAdFailedToLoad: (_) {
           _rewardedAd = null;
           _isLoading = false;
-          onFailed();
         },
       ),
     );
   }
 
-  void show({
-    required VoidCallback onRewardEarned,
-    required VoidCallback onAdClosed,
+  /// Try showing ad → fallback if unavailable
+  void showIfAvailable({
+    required VoidCallback onComplete,
   }) {
     final ad = _rewardedAd;
-    if (ad == null) return;
+
+    if (ad == null) {
+      // ❌ No ad → continue immediately
+      onComplete();
+      preload(); // try loading next time
+      return;
+    }
 
     ad.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (_) {
         ad.dispose();
         _rewardedAd = null;
-        onAdClosed();
+        onComplete();
+        preload(); // prepare next ad
       },
       onAdFailedToShowFullScreenContent: (_, __) {
         ad.dispose();
         _rewardedAd = null;
-        onAdClosed();
+        onComplete();
+        preload();
       },
     );
 
     ad.show(
-      onUserEarnedReward: (_, __) {
-        onRewardEarned();
-      },
+      onUserEarnedReward: (_, __) {},
     );
   }
 }

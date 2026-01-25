@@ -1,30 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:app_tracking_transparency/app_tracking_transparency.dart';
-import 'dart:io';
 
 import 'screens/about_screen.dart';
 import 'screens/generate_qr_screen.dart';
 import 'screens/qr_templates_screen.dart';
 import 'screens/qr_history_screen.dart';
 
-import 'services/usage_service.dart';
-import 'widgets/reward_dialog.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ STEP 1: Request ATT FIRST (iOS only)
-  if (Platform.isIOS) {
-    final status =
-    await AppTrackingTransparency.trackingAuthorizationStatus;
-
-    if (status == TrackingStatus.notDetermined) {
-      await AppTrackingTransparency.requestTrackingAuthorization();
-    }
-  }
-
-  // ✅ STEP 2: Initialize AdMob AFTER ATT
+  // Initialize AdMob (ATT is already handled before showing rewarded ads)
   await MobileAds.instance.initialize();
 
   runApp(const MyApp());
@@ -53,14 +38,8 @@ class MyApp extends StatelessWidget {
 /// ----------------------------------------------------
 /// HOME SCREEN
 /// ----------------------------------------------------
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'QR Pro',
+                          'QR Creator',
                           style: Theme.of(context)
                               .textTheme
                               .headlineMedium
@@ -127,10 +106,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.flash_on,
                   title: 'Quick QR',
                   subtitle: 'Generate QR from text or link',
-                  onTap: () => _handleLimitedAccess(
-                    context,
-                    const GenerateQrScreen(),
-                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const GenerateQrScreen(),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 16),
@@ -139,10 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: Icons.dashboard_customize,
                   title: 'QR Templates',
                   subtitle: 'WiFi • WhatsApp • Email • Phone',
-                  onTap: () => _handleLimitedAccess(
-                    context,
-                    const QrTemplatesScreen(),
-                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const QrTemplatesScreen(),
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 16),
@@ -162,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 Center(
                   child: Text(
-                    '3 free uses daily • Watch a short ad to unlock more',
+                    'Watch a short ad only when you share a QR',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.grey.shade600,
@@ -189,38 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  /// ----------------------------------------------------
-  /// ACCESS CONTROL
-  /// ----------------------------------------------------
-  Future<void> _handleLimitedAccess(
-      BuildContext context,
-      Widget screen,
-      ) async {
-    final canUse = await UsageService.canUseToday();
-
-    if (canUse) {
-      await UsageService.increaseUsage();
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => screen),
-      );
-    } else {
-      final unlocked = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const RewardDialog(),
-      );
-
-      if (unlocked == true) {
-        await UsageService.increaseUsage();
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => screen),
-        );
-      }
-    }
   }
 
   /// ----------------------------------------------------

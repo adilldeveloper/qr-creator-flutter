@@ -34,32 +34,32 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 
 
-
-
 <key>NSUserTrackingUsageDescription</key>
-<string>This helps us deliver relevant ads and improve the app experience.</string>
+
+<string>This app uses tracking to support advertising and keep the app free.</string>
 
 
-<key>NSPhotoLibraryAddUsageDescription</key>
-<string>This app needs access to save generated QR images.</string>
+
+
+
 
 <key>GADApplicationIdentifier</key>
 <string>ca-app-pub-4767222875229256~1252450377</string>
 
 
+
+
+<key>UIDeviceFamily</key>
+<array>
+    <integer>1</integer>
+</array>
 
 
 </dict>
