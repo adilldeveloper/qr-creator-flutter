@@ -26,7 +26,9 @@ class RewardAdService {
 
     RewardedAd.load(
       adUnitId: _adUnitId,
-      request: const AdRequest(),
+      request: const AdRequest(
+        nonPersonalizedAds: true, // 🔒 FORCE non-personalized ads
+      ),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           _rewardedAd = ad;
@@ -38,6 +40,7 @@ class RewardAdService {
         },
       ),
     );
+
   }
 
   /// Try showing ad → fallback if unavailable

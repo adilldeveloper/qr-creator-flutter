@@ -9,6 +9,15 @@ import 'screens/qr_history_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+
+// 🔒 Disable IDFA & tracking signals for AdMob (iOS)
+  await MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(
+      tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.yes,
+    ),
+  );
+
+
   // Initialize AdMob (ATT is already handled before showing rewarded ads)
   await MobileAds.instance.initialize();
 

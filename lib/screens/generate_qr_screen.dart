@@ -42,7 +42,7 @@ class _GenerateQrScreenState extends State<GenerateQrScreen> {
 
   Future<void> _prepareAds() async {
     // 🔐 STEP 1: Request ATT permission (iOS only)
-    await AttService.requestIfNeeded();
+   // await AttService.requestIfNeeded();
 
     // 📢 STEP 2: Initialize AdMob AFTER ATT
     await MobileAds.instance.initialize();
