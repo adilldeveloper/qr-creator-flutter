@@ -58,35 +58,62 @@ class _GenerateQrScreenState extends State<GenerateQrScreen> {
   }
 
   /// SHARE QR (AD IF AVAILABLE, OTHERWISE DIRECT SHARE)
+
+
   Future<void> _shareQr() async {
     if (_qrData.isEmpty) return;
 
-    _adService.showIfAvailable(
-      onComplete: () async {
-        final boundary =
-        _qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    try {
+      _adService.showIfAvailable(
+        onComplete: () async {
+          try {
+            final qrContext = _qrKey.currentContext;
+            if (qrContext == null) return;
 
-        final image = await boundary.toImage(pixelRatio: 3);
-        final byteData =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+            final boundary =
+            qrContext.findRenderObject() as RenderRepaintBoundary?;
+            if (boundary == null) return;
 
-        final Uint8List pngBytes = byteData!.buffer.asUint8List();
+            final image = await boundary.toImage(pixelRatio: 3);
+            final byteData =
+            await image.toByteData(format: ui.ImageByteFormat.png);
+            if (byteData == null) return;
 
-        final XFile file = XFile.fromData(
-          pngBytes,
-          mimeType: 'image/png',
-          name: 'qr.png',
-        );
+            final Uint8List pngBytes =
+            byteData.buffer.asUint8List();
 
-        await QrHistoryService.add(_qrData);
+            final XFile file = XFile.fromData(
+              pngBytes,
+              mimeType: 'image/png',
+              name: 'qr.png',
+            );
 
-        await Share.shareXFiles(
-          [file],
-          text: 'Generated using QR Pro',
-        );
-      },
-    );
+            await QrHistoryService.add(_qrData);
+
+            // 👇 Use screen context for iPad popover stability
+            final RenderBox box =
+            context.findRenderObject() as RenderBox;
+
+            await Share.shareXFiles(
+              [file],
+              text: 'Generated using QR Pro',
+              sharePositionOrigin:
+              box.localToGlobal(Offset.zero) & box.size,
+            );
+          } catch (e) {
+            debugPrint("Share error: $e");
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint("Ad error: $e");
+    }
   }
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
